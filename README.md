@@ -1,0 +1,2 @@
+# pdnsm
+Personal DNS manager
