@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DNS web tools</title>
+    <link rel="stylesheet" href="bulma.min.css">
+    <script src="vue.min.js"></script>
+</head>
+
+<body>
+    <div id="main">
+        <section class="section">
+            <div class="tabs is-medium">
+                <ul>
+                    <li v-bind:class="{ 'is-active': tabState=='dashboard' }"><a v-on:click="switchTab('dashboard')">Dashboard</a></li>
+                    <li v-bind:class="{ 'is-active': tabState=='hosts' }"><a v-on:click="switchTab('hosts')">Hosts</a></li>
+                    <li v-bind:class="{ 'is-active': tabState=='zones' }"><a v-on:click="switchTab('zones')">Zones</a></li>
+                </ul>
+            </div>
+            <div class="container" v-show="tabState=='hosts'">
+                <table class="table is-bordered is-striped is-hoverable is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th class="is-fullwidth">IP</th>
+                            <th class="is-fullwidth">Domain</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <td><input class="input is-small"></td>
+                            <td><input class="input is-small" type="text"></td>
+                            <td><a v-on:click="addHosts" class="button is-small is-primary is-fullwidth">Add</a></td>
+                        </tr>
+                    </tfoot>
+                    <tbody>
+                        <tr v-for="(item, index) in hosts">
+                            <td v-on:click="editHosts(item)">
+                                <input class="input is-small" v-if="item.edit" v-model="item.ip">
+                                <span v-else>{{ item.ip }}</span>
+                            </td>
+                            <td v-on:click="editHosts(item)">
+                                <input class="input is-small" v-if="item.edit" v-model="item.domain">
+                                <span v-else>{{ item.domain }}</span>
+                            </td>
+                            <td>
+                                <a v-if="item.edit" v-on:click="saveHosts(item)" class="button is-small is-info is-fullwidth">
+                                    {{ item.ip == hostStage.ip && item.domain == hostStage.domain ? 'Cancel' : 'Save' }}
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="container" v-show="tabState=='zones'">
+                <table class="table is-bordered is-striped is-hoverable is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th class="is-fullwidth">IP</th>
+                            <th class="is-fullwidth">Domain</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <td><input class="input is-small"></td>
+                            <td><input class="input is-small" type="text"></td>
+                            <td><a v-on:click="addHosts" class="button is-small is-primary is-fullwidth">Add</a></td>
+                        </tr>
+                    </tfoot>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</body>
+
+<script>
+    var app = new Vue({
+        el: '#main',
+        data: {
+            tabState: "hosts",
+            hostStage: {
+                ip: "",
+                domain: ""
+            },
+            hosts: []
+        },
+        mounted() {
+            this.getHosts();
+        },
+        methods: {
+            switchTab: function (state) {
+                this.tabState = state
+            },
+            getHosts: function () {
+                this.hosts = [
+                    { "ip": "127.0.0.1", "domain": "localhost" },
+                    { "ip": "127.0.0.1", "domain": "localhost" },
+                    { "ip": "127.0.0.1", "domain": "localhost" },
+                    { "ip": "127.0.0.1", "domain": "localhost" },
+                    { "ip": "127.0.0.1", "domain": "localhost" },
+                    { "ip": "127.0.0.1", "domain": "localhost" },
+                ].map(item => Object.assign(item, { edit: false }))
+            },
+            editHosts: function (item) {
+                this.hosts.map(function (ele) {
+                    if (ele.edit) {
+                        ele.ip = this.hostStage.ip;
+                        ele.domain = this.hostStage.domain;
+                        ele.edit = false;
+                    }
+                }, this)
+                this.hostStage.ip = item.ip;
+                this.hostStage.domain = item.domain;
+                item.edit = true
+            },
+            saveHosts: function (item) {
+                item.edit = false
+                console.log("save host " + item.domain + " " + item.ip)
+            },
+            addHosts: function () {
+
+            }
+        }
+    })
+</script>
+
+</html>
