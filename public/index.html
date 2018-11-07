@@ -20,39 +20,42 @@
                 </ul>
             </div>
             <div class="container" v-show="tabState=='hosts'">
-                <table class="table is-bordered is-striped is-hoverable is-fullwidth">
-                    <thead>
-                        <tr>
-                            <th class="is-fullwidth">IP</th>
-                            <th class="is-fullwidth">Domain</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tfoot>
-                        <tr>
-                            <td><input class="input is-small"></td>
-                            <td><input class="input is-small" type="text"></td>
-                            <td><a v-on:click="addHosts" class="button is-small is-primary is-fullwidth">Add</a></td>
-                        </tr>
-                    </tfoot>
-                    <tbody>
-                        <tr v-for="(item, index) in hosts">
-                            <td v-on:click="editHosts(item)">
-                                <input class="input is-small" v-if="item.edit" v-model="item.ip">
-                                <span v-else>{{ item.ip }}</span>
-                            </td>
-                            <td v-on:click="editHosts(item)">
-                                <input class="input is-small" v-if="item.edit" v-model="item.domain">
-                                <span v-else>{{ item.domain }}</span>
-                            </td>
-                            <td>
-                                <a v-if="item.edit" v-on:click="saveHosts(item)" class="button is-small is-info is-fullwidth">
-                                    {{ item.ip == hostStage.ip && item.domain == hostStage.domain ? 'Cancel' : 'Save' }}
-                                </a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="columns is-mobile">
+                    <div class="column is-one-third"><b class="is-bold">IP</b></div>
+                    <div class="column is-one-third"><b class="is-bold">Domain</b></div>
+                    <div class="column is-one-third"></div>
+                </div>
+                <hr>
+                <div class="columns is-mobile" v-for="(item, index) in hosts">
+                    <div class="column is-one-third" v-on:click="editHosts(item)">
+                        <input class="input" v-if="item.edit" v-model="item.ip">
+                        <span v-else>{{ item.ip }}</span>
+                    </div>
+                    <div class="column is-one-third" v-on:click="editHosts(item)">
+                        <input class="input" v-if="item.edit" v-model="item.domain">
+                        <span v-else>{{ item.domain }}</span>
+                    </div>
+                    <div class="column is-one-third">
+                        <div v-if="item.edit" class="buttons">
+                            <span class="button is-warning" v-on:click="modifyHosts(item)">Save</span>
+                            <span class="button is-danger" v-on:click="delHosts(item)">Del</span>
+                            <span class="button is-info" v-on:click="cancelHosts(item)">Cancel</span>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="columns is-mobile">
+                    <div class="column is-one-third">
+                        <input class="input" v-model="hostForm.ip">
+                    </div>
+                    <div class="column is-one-third">
+                        <input class="input" v-model="hostForm.domain">
+                    </div>
+                    <div class="column is-one-third">
+                        <a v-on:click="addHosts" class="button is-primary">Add</a>
+                    </div>
+                </div>
+
             </div>
             <div class="container" v-show="tabState=='zones'">
                 <table class="table is-bordered is-striped is-hoverable is-fullwidth">
@@ -65,9 +68,9 @@
                     </thead>
                     <tfoot>
                         <tr>
-                            <td><input class="input is-small"></td>
-                            <td><input class="input is-small" type="text"></td>
-                            <td><a v-on:click="addHosts" class="button is-small is-primary is-fullwidth">Add</a></td>
+                            <td><input class="input"></td>
+                            <td><input class="input" type="text"></td>
+                            <td><a v-on:click="addHosts" class="button is-small is-success is-fullwidth">Add</a></td>
                         </tr>
                     </tfoot>
                     <tbody>
@@ -87,6 +90,10 @@
                 ip: "",
                 domain: ""
             },
+            hostForm: {
+                ip: "",
+                domain: ""
+            },
             hosts: []
         },
         mounted() {
@@ -97,14 +104,14 @@
                 this.tabState = state
             },
             getHosts: function () {
-                this.hosts = [
-                    { "ip": "127.0.0.1", "domain": "localhost" },
-                    { "ip": "127.0.0.1", "domain": "localhost" },
-                    { "ip": "127.0.0.1", "domain": "localhost" },
-                    { "ip": "127.0.0.1", "domain": "localhost" },
-                    { "ip": "127.0.0.1", "domain": "localhost" },
-                    { "ip": "127.0.0.1", "domain": "localhost" },
-                ].map(item => Object.assign(item, { edit: false }))
+                let self = this;
+                fetch('/api/get-hosts').then(function (response) {
+                    return response.json();
+                }).then(function (myJson) {
+                    self.hosts = myJson.map(item => Object.assign(item, { edit: false }));
+                }).catch(function (reason) {
+                    console.log(reason)
+                });
             },
             editHosts: function (item) {
                 this.hosts.map(function (ele) {
@@ -118,15 +125,53 @@
                 this.hostStage.domain = item.domain;
                 item.edit = true
             },
-            saveHosts: function (item) {
+            cancelHosts: function (item) {
+                if (item.edit) {
+                    item.ip = this.hostStage.ip;
+                    item.domain = this.hostStage.domain;
+                    item.edit = false;
+                }
+            },
+            delHosts: function(item) {
+                let self = this;
+                let formdata = new FormData();
+                formdata.append('domain', item.domain);
+                fetch('/api/del-hosts', {
+                    method: "POST",
+                    body: formdata
+                }).then(function (response) { return response.body })
+                    .then(function (body) { self.getHosts() })
+                    .catch(function (reason) { console.log(reason) })
+            },
+            modifyHosts: function (item) {
                 item.edit = false
-                console.log("save host " + item.domain + " " + item.ip)
+                if (item.ip != this.hostStage.ip || item.domain != this.hostStage.domain) {
+                    this.putHosts(item.ip, item.domain, this.hostStage.domain)
+                }
             },
             addHosts: function () {
-
+                if (this.hostForm.ip && this.hostForm.domain) {
+                    this.putHosts(this.hostForm.ip, this.hostForm.domain)
+                    this.hostForm.ip = "";
+                    this.hostForm.domain = "";
+                }
+            },
+            putHosts: function (ip, domain, old) {
+                let self = this;
+                let formdata = new FormData();
+                formdata.append('ip', ip);
+                formdata.append('domain', domain);
+                if (old) {
+                    formdata.append('old', old);
+                }
+                fetch('/api/put-hosts', {
+                    method: "POST",
+                    body: formdata
+                }).then(function (response) { return response.body })
+                    .then(function (body) { self.getHosts() })
+                    .catch(function (reason) { console.log(reason) })
             }
         }
     })
 </script>
-
 </html>
